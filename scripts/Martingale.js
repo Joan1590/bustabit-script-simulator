@@ -1,6 +1,6 @@
 var config = {
   baseBet: { value: 100, type: 'balance', label: 'base bet' },
-  payout: { value: 2, type: 'multiplier' },
+  payout: { value: 1.1, type: 'multiplier' },
   stop: { value: 1e8, type: 'balance', label: 'stop if bet >' },
   loss: {
     value: 'increase',
@@ -8,7 +8,7 @@ var config = {
     label: 'On Loss',
     options: {
       base: { type: 'noop', label: 'Return to base bet' },
-      increase: { value: 2, type: 'multiplier', label: 'Increase bet by' },
+      increase: { value: 11, type: 'multiplier', label: 'Increase bet by' },
     },
   },
   win: {
@@ -16,8 +16,8 @@ var config = {
     type: 'radio',
     label: 'On Win',
     options: {
-      base: { type: 'noop', label: 'Return to base bet' },
-      increase: { value: 2, type: 'multiplier', label: 'Increase bet by' },
+      base: { type: 'noop', label: 'Return to base bet', value: true },
+      increase: { value: 1, type: 'multiplier', label: 'Increase bet by' },
     },
   },
 };

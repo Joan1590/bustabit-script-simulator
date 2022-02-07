@@ -1,0 +1,15 @@
+{
+  "name": "simulator-node",
+  "version": "1.0.0",
+  "main": "main.js",
+  "author": "JoanxD",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "crypto-js": "^4.1.1",
+    "fs": "^0.0.1-security"
+  },
+  "scripts": {
+    "start": "python3 simulator.py scripts/labouchere.js -b 10000 tests/100000.txt"
+  }
+}
