@@ -1,6 +1,5 @@
 // Area of cryptohashes
 import CryptoJS from 'crypto-js'
-import fs from 'fs'
 
 const baseBustabit = '0000000000000000004d6ec16dafe9d8370958664c1dc422f452892264c59526';
 
@@ -250,7 +249,7 @@ function gameResults(gameHash, gameAmount) {
   let prevHash = gameHash;
   for (let index = 0; index < gameAmount; index++) {
     let hash = String(CryptoJS.SHA256(String(prevHash)));
-    let bust = gameResult(hash, '0000000000000000004d6ec16dafe9d8370958664c1dc422f452892264c59526');
+    let bust = gameResult(hash, baseBustabit);
 
     games.push(`${index + 1}:${gameHash}:${bust}`);
 
@@ -260,9 +259,12 @@ function gameResults(gameHash, gameAmount) {
   return games;
 }
 
-function loadGames(hash, balance, displayCrashes) {
+function loadGames(hash, balance, displayCrashes, amountGames) {
 
-  var games = gameResults(hash, 1000);
+  var games = gameResults(hash, amountGames);
+
+  console.log(`loading games ${amountGames}`);
+
   var engine = new Engine(balance, games.reverse(), displayCrashes);
 
   // Script
@@ -281,5 +283,5 @@ if (process.argv[2] === undefined) {
   console.log('Invalid arguments');
   process.exit(1);
 } else {
-  loadGames(process.argv[2], parseInt(process.argv[3]), process.argv[4]);
+  loadGames(process.argv[2], parseInt(process.argv[3]), process.argv[4], parseInt(process.argv[5]));
 }

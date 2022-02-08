@@ -16,7 +16,7 @@ class Simulator:
 
     def start(self):
         print("Starting...")
-        subprocess.run(["node", self.tempdir + "/" + "script.js", str(self.args.hash), str(self.args.balance), str(self.args.crashes).lower()])
+        subprocess.run(["node", self.tempdir + "/" + "script.js", str(self.args.hash), str(self.args.balance), str(self.args.crashes).lower(), str(self.args.games)])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -24,6 +24,7 @@ if __name__ == "__main__":
     parser.add_argument("hash", help="hash for games", type=str)
     parser.add_argument("-l", "--logs", help="view script logs", action='store_true')
     parser.add_argument("-c", "--crashes", help="display 25 biggest crashes", action='store_true')
-    parser.add_argument("-b", "--balance", help="starting balance", type=int, default=1000000000)
+    parser.add_argument("-b", "--balance", help="starting balance", type=int, default=10000)
+    parser.add_argument("-g", "--games", help="Number of games to play", type=int, default=10000)
     Simulator(parser.parse_args()).start()
     exit(0)

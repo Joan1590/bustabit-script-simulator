@@ -5,7 +5,7 @@ var config = {
 
 //Variables de apuesta y multiplicador
 var currentBet = config.wager.value;
-var currentPayout = 2;
+var currentPayout = 1.2;
 var pattern = '';
 var currentPattern = '';
 var pos = -1;
@@ -61,11 +61,15 @@ function roundBit(bet) {
 
 //Bustabit Apuesta (No modificar)
 if (bustabit) {
-    engine.bet(roundBit(currentBet), currentPayout);
+    // engine.bet(roundBit(currentBet), currentPayout);
 
     engine.on('GAME_ENDED', () => {
         var lastGame = engine.history.first();
         getResult(lastGame.bust);
+
+    });
+
+    engine.on('GAME_STARTING', () => {
         if (run) {
             engine.bet(roundBit(currentBet), currentPayout);
         }

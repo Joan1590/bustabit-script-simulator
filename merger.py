@@ -26,6 +26,7 @@ class Merger:
         for i in range(0, len(data)):
             if (self.args.logs):
                 data[i] = data[i].replace("log", "console.log")
+                data[i] = data[i].replace("Math.console", "Math")
             else:
                 data[i] = data[i].replace("log", "// console.log")
         return data, config

@@ -10,6 +10,6 @@
     "fs": "^0.0.1-security"
   },
   "scripts": {
-    "start": "python3 simulator.py scripts/labouchere.js -b 10000 tests/100000.txt"
+    "start": "python3 simulator.py scripts/long_term.js -b 10000 2070a1424786c2f6058809eaf303365fc1e3562f42a0670300aa7d3939c479bb -l"
   }
 }
