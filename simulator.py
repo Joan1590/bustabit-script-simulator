@@ -6,26 +6,25 @@ import argparse
 import subprocess
 
 class Simulator:
-    tempdir = "./.temp"
+    tempdir = ".temp"
     args = []
 
     def __init__(self, args):
         self.args = args
-
         # cleaner.Cleaner(self.args, self.tempdir).clean()
         merger.Merger(self.args, self.tempdir).merge()
 
     def start(self):
         print("Starting...")
-        print(self.args)
-        subprocess.run(["node", self.tempdir + "/" + "script.js", str(self.args.balance * 100), str(self.args.hash).lower(), str(self.args.games), str(self.args.logs)])
+        subprocess.run(["node", self.tempdir + "/" + "script.js", str(self.args.hash), str(self.args.balance), str(self.args.crashes).lower(), str(self.args.games)])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("script",           help="Path to script file to be simulated.", type=misc.isFileExist)
-    parser.add_argument("-b", "--balance",  help="Amount of initial balance to start the simulation with.", type=int, default=10000)
-    parser.add_argument("-e", "--hash",     help="Ending hash to generate the games from.", type=str, default='rand')
-    parser.add_argument("-g", "--games",    help="Number of games to be played in the simulation", type=int, default=10000)
-    parser.add_argument("-l", "--logs",     help="Enable the script log output to the console.", action='store_true')
+    parser.add_argument("script", help="script to test", type=misc.isFileExist)
+    parser.add_argument("hash", help="hash for games", type=str)
+    parser.add_argument("-l", "--logs", help="view script logs", action='store_true')
+    parser.add_argument("-c", "--crashes", help="display 25 biggest crashes", action='store_true')
+    parser.add_argument("-b", "--balance", help="starting balance", type=int, default=10000)
+    parser.add_argument("-g", "--games", help="Number of games to play", type=int, default=10000)
     Simulator(parser.parse_args()).start()
     exit(0)

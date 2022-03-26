@@ -23,21 +23,20 @@ class Merger:
         if not config:
             sys.stderr.write("No config found in script\n")
             exit(1)
-
         for i in range(0, len(data)):
-            data[i] = data[i].replace("`", "\\`")
-
-        # config_lines = "\n"
-        # config_lines = config_lines.join(config)
-        config_lines = config
-        script_lines = ["var scriptText = `"] + data + ["`;"]
-        return script_lines, config_lines
+            if (self.args.logs):
+                data[i] = data[i].replace("log", "console.log")
+                data[i] = data[i].replace("Math.console", "Math")
+            else:
+                data[i] = data[i].replace("log", "// console.log")
+        return data, config
 
     def merge(self):
         print("Merging...")
         script, config = self.getScript()
         engine = misc.loadFile(self.enginefile)
-        temp = engine[:3] + config + ["\n"] + script + ["\n"] + engine[3:len(engine)]
+        temp = engine[:1] + config + engine[:len(engine) - 18]
+        temp += script[len(config):] + ["\n"] + engine[len(engine)-19:]
         with open(os.getcwd() + "/" + self.tempdir + "/script.js", "w") as file:
             for line in temp : file.write(line)
         print("'" + self.args.script + "' merged")
