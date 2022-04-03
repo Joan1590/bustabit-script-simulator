@@ -2,8 +2,12 @@
 import CryptoJS from 'crypto-js'
 import Table from 'cli-table3'
 import EventEmitter from 'events'
+import { SimProfiler } from '../SimProfiler.js';
 
+globalThis.runTimes = { contextSetup: 0, gameGeneration: 0, scriptSetup: 0, simRunning: 0, simFinalize: 0, simResults: 0 }
 globalThis.logFuncs = { log: console.log, warn: console.warn, info: console.info, error: console.error, debug: console.debug }
+
+const profiler = new SimProfiler(logFuncs.log);
 
 function hashToBust(seed) {
   const nBits = 52
@@ -148,6 +152,8 @@ function evalScript() {
 
 function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLogging) {
   return new Promise((resolve, reject) => {
+    logFuncs.log(`Setting up simulation environment..`)
+    profiler.start('Environment Setup')
     let logMessages = '';
     let shouldStop = false;
     let shouldStopReason = undefined;
@@ -220,8 +226,9 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
       message: '',
       log: logMessages
     }
-
     const context = { config, engine, userInfo, log: (!scriptLogging ? ()=>{} : log), stop, gameResultFromHash, SHA256 }
+    profiler.stop('Environment Setup')
+    profiler.start('Game Result Generation')
     const games = hashToBusts(gameHash, gameAmount + engine.history.size);
     const gamesLen = games.length;
 
@@ -229,8 +236,11 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
       const g = games[i];
       engine.history.addGame({ id: i, hash: g.hash, bust: g.bust, wager: 0, cashedAt: 0, isSimulation: true })
     }
-
+    profiler.stop('Game Result Generation')
+    profiler.start('Script Setup')
     evalScript.call(context, text)
+    profiler.stop('Script Setup')
+    profiler.start('Simulation')
     nextGame(engine.history.size-1)
 
     function nextGame(id) {
@@ -243,8 +253,10 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
         }
       })
     }
-
+    
     function endSimulation() {
+      profiler.stop('Simulation')
+      profiler.start('Cleanup')
       if (!!scriptLogging) {
         console.log = logFuncs.log
         console.warn = logFuncs.warn
@@ -255,7 +267,7 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
       if (shouldStop && shouldStopReason) {
         log(shouldStopReason)
       }
-
+      
       if (userInfo.streakSum < userInfo.sumWagers) {
         userInfo.streakSum = userInfo.sumWagers
       }
@@ -276,12 +288,14 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
       let allWagers = userInfo.pastWagers.map(a=>a.wager);
       let topWagers = allWagers.reduce((a, b)=>(a[b]=(a[b]?a[b]+1:1), a), {});
       results.favBet = Object.entries(topWagers).reduce((a, b)=>(b[1]>a[1]?b:a),[null,0])[0];
+      results.medBet = allWagers.sort((a, b)=>(a-b))[Math.floor(allWagers.length/2)];
       results.highPayout = userInfo.highPayout
       results.lowPayout = userInfo.lowPayout
       results.avgPayout = userInfo.avgPayout
       let allPayouts = userInfo.pastWagers.map(a=>a.payout);
       let topPayouts = allPayouts.reduce((a, b)=>(a[b]=(a[b]?a[b]+1:1), a), {});
       results.favPayout = Object.entries(topPayouts).reduce((a, b)=>(b[1]>a[1]?b:a),[null,0])[0];
+      results.medPayout = allPayouts.sort((a,b)=>a-b)[Math.floor(allPayouts.length/2)];
       results.streakSum = userInfo.streakSum
       results.loseStreak = userInfo.loseStreak
       results.winStreak = userInfo.winStreak
@@ -294,9 +308,10 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
       results.message = `${userInfo.gamesPlayed} Games played. ${results.profit > 0 ? 'Won' : 'Lost'} ${(results.profit / 100)} bits. ${results.message || ''}`
       //results.history = engine.history
       //results.scriptLog = logMessages
+      profiler.stop('Cleanup')
       resolve(results)
     }
-
+    
     function doGame(id) {
       const game = games[id]
       game.id = id
@@ -492,10 +507,11 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
   }
 
   function printResults(results) {
+    profiler.start('results');
     logFuncs.log('\n\x1b[1m----------- simulation ended -----------')
     var resultTable = new Table({ colWidths: [20, 15, 15, 16, 16, 17] });
     resultTable.push(
-      [{ colSpan: 1, rowSpan: 2, vAlign: 'bottom', hAlign: 'right', content: 'Games' }, 'Skips', 'Bets', 'Wins', 'Loses', 'Total'],
+      [{ colSpan: 1, rowSpan: 2, vAlign: 'bottom', hAlign: 'right', content: 'Games' }, 'Games Skipped', 'Games Wagered', 'Games Won', 'Games Lost', 'Games Total'],
       [
         formatGames(results.gamesSkipped),
         formatGames(results.gamesPlayed),
@@ -525,7 +541,7 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
       formatGames(results.loseStreak),
       formatBalance(results.streakSum),
       formatGames(results.winStreak),
-      formatBalance(results.streakSum)
+      'TODO'
     ]
 );
     logFuncs.log(resultTable.toString());
@@ -539,16 +555,22 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
         formatBalance(results.balanceATL)
       ])
     logFuncs.log(resultTable.toString())
-    resultTable = new Table({ colWidths: [20, 20, 20, 20, 20] });
+    resultTable = new Table({ colWidths: [20, 15, 15, 16, 16, 17] });
     resultTable.push(
-        [{ colSpan: 1, rowSpan: 2, vAlign: 'bottom', hAlign: 'right', content: 'Wager' }, "Lowest", "Highest", "Average", "Frequent"],
-        [formatBalance(results.lowBet), formatBalance(results.highBet), formatBalance(results.avgBet), formatBalance(results.favBet)],
+        [{ colSpan: 1, rowSpan: 2, vAlign: 'bottom', hAlign: 'right', content: 'Wager' }, "Lowest", "Highest", "Mean", "Median", "Mode"],
+        [
+          formatBalance(results.lowBet),
+          formatBalance(results.highBet),
+          formatBalance(results.avgBet),
+          formatBalance(results.medBet),
+          formatBalance(results.favBet)],
         [
           { colSpan: 1, hAlign: 'right', content: 'Payout' },
           formatPayout(results.lowPayout),
           formatPayout(results.highPayout),
           formatPayout(results.avgPayout),
-          formatPayout(results.favPayout)
+          formatPayout(results.medPayout),
+          formatPayout(results.favPayout),
         ])
         logFuncs.log(resultTable.toString())
     resultTable = new Table({ colWidths: [20, 20, 20, 20, 20] });
@@ -567,6 +589,8 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
           { colSpan: 1, rowSpan: 1, hAlign: 'center', content: formatBalance(results.profitPerDay) }
         ]);
     logFuncs.log(resultTable.toString());
+
+    resultTable = new Table({ colWidths: [20, 20, 20, 20, 20] });
     logFuncs.log('----------------------------------------\n\x1b[0m');
   }
 if (process.argv.length < 5) {
