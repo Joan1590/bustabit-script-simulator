@@ -227,7 +227,7 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
       log: logMessages
     }
     const context = { config, engine, userInfo, log: (!scriptLogging ? ()=>{} : log), stop, gameResultFromHash, SHA256 }
-    profiler.stop('Environment Setup')
+    runTimes.contextSetup = profiler.stop('Environment Setup')
     profiler.start('Game Result Generation')
     const games = hashToBusts(gameHash, gameAmount + engine.history.size);
     const gamesLen = games.length;
@@ -236,10 +236,10 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
       const g = games[i];
       engine.history.addGame({ id: i, hash: g.hash, bust: g.bust, wager: 0, cashedAt: 0, isSimulation: true })
     }
-    profiler.stop('Game Result Generation')
+    runTimes.gameGeneration = profiler.stop('Game Result Generation')
     profiler.start('Script Setup')
     evalScript.call(context, text)
-    profiler.stop('Script Setup')
+    runTimes.scriptSetup = profiler.stop('Script Setup')
     profiler.start('Simulation')
     nextGame(engine.history.size-1)
 
@@ -255,7 +255,7 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
     }
     
     function endSimulation() {
-      profiler.stop('Simulation')
+      runTimes.simRunning = profiler.stop('Simulation')
       profiler.start('Cleanup')
       if (!!scriptLogging) {
         console.log = logFuncs.log
@@ -308,7 +308,7 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
       results.message = `${userInfo.gamesPlayed} Games played. ${results.profit > 0 ? 'Won' : 'Lost'} ${(results.profit / 100)} bits. ${results.message || ''}`
       //results.history = engine.history
       //results.scriptLog = logMessages
-      profiler.stop('Cleanup')
+      runTimes.simFinalize = profiler.stop('Cleanup')
       resolve(results)
     }
     
@@ -507,7 +507,7 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
   }
 
   function printResults(results) {
-    profiler.start('results');
+    profiler.start('Reporting Results');
     logFuncs.log('\n\x1b[1m----------- simulation ended -----------')
     var resultTable = new Table({ colWidths: [20, 15, 15, 16, 16, 17] });
     resultTable.push(
@@ -592,6 +592,9 @@ function simulate(text, config, startingBalance, gameHash, gameAmount, scriptLog
 
     resultTable = new Table({ colWidths: [20, 20, 20, 20, 20] });
     logFuncs.log('----------------------------------------\n\x1b[0m');
+    runTimes.simResults = profiler.stop('Reporting Results');
+    let totalTime = Object.values(runTimes).reduce((a,b)=>a+b);
+    logFuncs.log(`LOG: Took ${totalTime}ms total`)
   }
 if (process.argv.length < 5) {
   console.log('Invalid arguments')
