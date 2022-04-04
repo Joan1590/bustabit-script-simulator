@@ -25,7 +25,7 @@ class Merger:
             exit(1)
 
         for i in range(0, len(data)):
-            data[i] = data[i].replace("`", "\\`")
+            data[i] = data[i].replace("`", "\\`").replace("$", "\\$")
 
         # config_lines = "\n"
         # config_lines = config_lines.join(config)
