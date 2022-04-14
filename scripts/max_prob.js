@@ -14,14 +14,13 @@ try {
 }
 
 //Variables de apuesta y multiplicador
-var currentBalance = bustabit?userInfo.balance:balance;
+var currentBalance = bustabit ? userInfo.balance : balance;
 var currentBet = currentBalance / 10000;
 var startBal = currentBalance;
 var prevBal = currentBalance;
-var payouts = [1.5,1.75, 2,2.25, 2.5,2.75, 3,3.25, 3.5];
+var payouts = [2, 5, 10];
 var currentPayout = payouts[0];
 var arrayGames = [];
-var medianConst = 1.98;
 
 //Esto habilita la siguiente apuesta
 var run = false;
@@ -32,11 +31,11 @@ var pair = false;
 
 //Validaciones dependiendo del resultado
 function getResult(multiplier) {
-    currentBalance = bustabit?userInfo.balance:balance;
+    currentBalance = bustabit ? userInfo.balance : balance;
     if (run) {
         // Labouchere
         if (multiplier < currentPayout) {
-            currentBet *= currentPayout / (currentPayout - 0.02);
+            currentBet *= currentPayout / (currentPayout - 0.03);
         }
         if (currentBalance >= startBal && prevBal <= startBal) {
             currentBet = currentBalance / 10000;
@@ -53,9 +52,8 @@ function getResult(multiplier) {
         for (let i = 0; i < payouts.length; i++) {
             let wins = arrayGames.filter((x) => x >= payouts[i]);
 
-            let p = bayes((1 - (.99/payouts[i])), wins.length / arrayGames.length);
             // log(`amount wins: ${wins.length}`)
-            if (p < 0.495 && median(arrayGames) >= medianConst) {
+            if (wins.length / arrayGames.length < .9 / payouts[i]) {
                 run = true;
                 currentPayout = payouts[i];
             } else {

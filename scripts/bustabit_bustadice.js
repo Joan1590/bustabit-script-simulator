@@ -104,3 +104,6 @@ if (bustabit) {
 function getMaxLoss(P) {
     return Math.abs(Math.trunc(Math.log(115792089237316195423570985008687907853269984665640564039457584007913129639936) / Math.log(1 - P)));
 }
+
+
+

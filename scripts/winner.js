@@ -14,17 +14,16 @@ try {
 }
 
 //Variables de apuesta y multiplicador
-var currentBalance = bustabit?userInfo.balance:balance;
+var currentBalance = bustabit ? userInfo.balance : balance;
 var currentBet = currentBalance / 10000;
 var startBal = currentBalance;
 var prevBal = currentBalance;
-var payouts = [1.5,1.75, 2,2.25, 2.5,2.75, 3,3.25, 3.5];
-var currentPayout = payouts[0];
-var arrayGames = [];
-var medianConst = 1.98;
+var currentPayout = 1.1;
+var summatory = 1;
+var pos = Math.floor(Math.random() * 10);
 
 //Esto habilita la siguiente apuesta
-var run = false;
+var run = true;
 
 //Para saltar apuesta en bustadice
 var pair = false;
@@ -32,37 +31,24 @@ var pair = false;
 
 //Validaciones dependiendo del resultado
 function getResult(multiplier) {
-    currentBalance = bustabit?userInfo.balance:balance;
+    currentBalance = bustabit ? userInfo.balance : balance;
+
     if (run) {
         // Labouchere
-        if (multiplier < currentPayout) {
-            currentBet *= currentPayout / (currentPayout - 0.02);
+        if (pos == 0) {
+            summatory *= 20;
+            currentBet *= summatory;
+            pos = Math.floor(Math.random() * 10);
+        } else {
+            currentBet = currentBalance / 10000;
+            pos--;
         }
         if (currentBalance >= startBal && prevBal <= startBal) {
             currentBet = currentBalance / 10000;
             startBal = currentBalance;
+            summatory = 1;
         }
         prevBal = currentBalance;
-    }
-
-    arrayGames.push(parseFloat(multiplier));
-    if (arrayGames.length > 1000) {
-        arrayGames.shift();
-    }
-    if (arrayGames.length == 1000) {
-        for (let i = 0; i < payouts.length; i++) {
-            let wins = arrayGames.filter((x) => x >= payouts[i]);
-
-            let p = bayes((1 - (.99/payouts[i])), wins.length / arrayGames.length);
-            // log(`amount wins: ${wins.length}`)
-            if (p < 0.495 && median(arrayGames) >= medianConst) {
-                run = true;
-                currentPayout = payouts[i];
-            } else {
-                run = false;
-            }
-        }
-
     }
 
 }
@@ -93,6 +79,7 @@ if (bustabit) {
     try {
         const makeBet = () => {
             this.bet(roundBit(currentBet), currentPayout).then((result) => {
+                balance = result.balance;
                 getResult(result.multiplier);
                 if (run) {
                     makeBet();
@@ -118,6 +105,7 @@ if (bustabit) {
             } else {
 
                 this.bet(100, 1.01).then((result) => {
+                    balance = result.balance;
                     getResult(result.multiplier);
                     if (run) {
                         makeBet();
@@ -138,15 +126,3 @@ if (bustabit) {
         }
     }
 }
-
-// utils
-function bayes(pa, pb) {
-    return (pa * pb) / ((pa * pb) + ((1 - pa) * (1 - pb)));
-}
-
-// #Source https://bit.ly/2neWfJ2 
-const median = arr => {
-    const mid = Math.floor(arr.length / 2),
-        nums = [...arr].sort((a, b) => a - b);
-    return arr.length % 2 !== 0 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
-};
