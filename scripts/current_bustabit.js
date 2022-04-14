@@ -2,6 +2,23 @@ var config = {
 
 };
 
+//Variables de apuesta y multiplicador
+var currentBet = userInfo.balance / 10000;
+var currentPayout = 1.01;
+var betMulti = 200;
+let startBal = userInfo.balance;
+let prevBal = userInfo.balance;
+let balanceSimulated = userInfo.balance;
+let startBalSimulated = balanceSimulated;
+let prevBalSimulated = balanceSimulated;
+let numGames = 50;
+
+//Esto habilita la siguiente apuesta
+var run = true;
+
+//Para saltar apuesta en bustadice
+var pair = false;
+
 //Verificador de si es bustabit o bustadice
 var bustabit;
 
@@ -13,58 +30,48 @@ try {
     bustabit = false;
 }
 
-//Variables de apuesta y multiplicador
-var currentBalance = bustabit?userInfo.balance:balance;
-var currentBet = currentBalance / 10000;
-var startBal = currentBalance;
-var prevBal = currentBalance;
-var payouts = [1.5,1.75, 2,2.25, 2.5,2.75, 3,3.25, 3.5];
-var currentPayout = payouts[0];
-var arrayGames = [];
-var medianConst = 1.98;
-
-//Esto habilita la siguiente apuesta
-var run = false;
-
-//Para saltar apuesta en bustadice
-var pair = false;
-
-
 //Validaciones dependiendo del resultado
 function getResult(multiplier) {
-    currentBalance = bustabit?userInfo.balance:balance;
     if (run) {
-        // Labouchere
-        if (multiplier < currentPayout) {
-            currentBet *= currentPayout / (currentPayout - 0.02);
+        numGames--;
+        if (multiplier > currentPayout) {
+            currentBet *= betMulti;
         }
-        if (currentBalance >= startBal && prevBal <= startBal) {
-            currentBet = currentBalance / 10000;
-            startBal = currentBalance;
-        }
-        prevBal = currentBalance;
-    }
-
-    arrayGames.push(parseFloat(multiplier));
-    if (arrayGames.length > 1000) {
-        arrayGames.shift();
-    }
-    if (arrayGames.length == 1000) {
-        for (let i = 0; i < payouts.length; i++) {
-            let wins = arrayGames.filter((x) => x >= payouts[i]);
-
-            let p = bayes((1 - (.99/payouts[i])), wins.length / arrayGames.length);
-            // log(`amount wins: ${wins.length}`)
-            if (p < 0.495 && median(arrayGames) >= medianConst) {
-                run = true;
-                currentPayout = payouts[i];
-            } else {
+        if (userInfo.balance >= startBal && prevBal <= startBal) {
+            currentBet = userInfo.balance / 10000;
+            startBal = userInfo.balance;
+            if (numGames < 0) {
                 run = false;
+
+                balanceSimulated = userInfo.balance;
+                startBalSimulated = balanceSimulated;
+                prevBalSimulated = balanceSimulated;
+                currentBet = balanceSimulated / 10000;
+                
             }
         }
-
+        prevBal = userInfo.balance;
+    } else {
+        // Simulation winner
+        if (multiplier >= currentPayout) {
+            balanceSimulated += currentBet * (currentPayout - 1);
+        } else {
+            balanceSimulated -= currentBet;
+        }
+        if (multiplier > currentPayout) {
+            currentBet *= betMulti;
+        }
+        if (balanceSimulated >= startBalSimulated && prevBalSimulated <= startBalSimulated) {
+            currentBet = balanceSimulated / 10000;
+            startBalSimulated = balanceSimulated;
+        }
+        prevBalSimulated = balanceSimulated;
+        if (currentBet > balanceSimulated) {
+            numGames = 50;
+            currentBet = userInfo.balance / 10000;
+            run = true;
+        }
     }
-
 }
 
 function roundBit(bet) {
@@ -128,7 +135,6 @@ if (bustabit) {
 
             }
         }
-        makeBet();
     } catch (error) {
         if (error.message === 'connection closed') {
             this.log('connection closed, restarting script');
@@ -139,14 +145,6 @@ if (bustabit) {
     }
 }
 
-// utils
-function bayes(pa, pb) {
-    return (pa * pb) / ((pa * pb) + ((1 - pa) * (1 - pb)));
+function getMaxLoss(P) {
+    return Math.abs(Math.trunc(Math.log(115792089237316195423570985008687907853269984665640564039457584007913129639936) / Math.log(1 - P)));
 }
-
-// #Source https://bit.ly/2neWfJ2 
-const median = arr => {
-    const mid = Math.floor(arr.length / 2),
-        nums = [...arr].sort((a, b) => a - b);
-    return arr.length % 2 !== 0 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
-};

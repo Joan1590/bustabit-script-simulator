@@ -133,7 +133,7 @@ class Engine {
     if (!isNumber(payout)) throw 'payout must be a number';
     if (userInfo.balance - satoshis < 0) {
       this.logs();
-      throw 'no enough bits (' + Math.round(userInfo.balance / 100) + '); bet: ' + satoshis;
+      throw 'no enough bits (' + Math.round(userInfo.balance / 100) + '); bet: ' + satoshis+'; payout: '+payout;
     } else {
       userInfo.balance -= satoshis;
     }

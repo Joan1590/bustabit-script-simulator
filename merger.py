@@ -20,9 +20,6 @@ class Merger:
                     config.append(data[j])
                     if data[j].replace('\n', '').replace(' ', '') == "};":
                         break
-        if not config:
-            sys.stderr.write("No config found in script\n")
-            exit(1)
         for i in range(0, len(data)):
             if (self.args.logs):
                 data[i] = data[i].replace("log", "console.log")
