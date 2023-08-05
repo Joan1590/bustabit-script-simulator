@@ -1,31 +1,50 @@
-from tokenize import String
-import misc
+
+"""
+A class to simulate the game using the user script
+"""
+import os
+import dukpy
 import merger
 import cleaner
-import argparse
-import subprocess
 
 class Simulator:
-    tempdir = "./.temp"
-    args = []
-
+    """
+    A class to simulate the game using the user script
+    """
     def __init__(self, args):
+        """
+        Initializes the Simulator instance with the given arguments.
+        """
         self.args = args
+        self.balance = args.balance
+        self.hash = args.hash
+        self.games = args.games
+        self.logs = args.logs
+        self.merger = merger.Merger(os.path.abspath(args.script), self.logs)
+        self.cleaner = cleaner.Cleaner(self.logs, self.merger.tempdir)
 
-        # cleaner.Cleaner(self.args, self.tempdir).clean()
-        merger.Merger(self.args, self.tempdir).merge()
+def start(self):
+    """
+    Starts the simulation
+    """
+    # Merging the engine with the user script
+    merged_script_path = self.merger.merge()
 
-    def start(self):
-        print("Starting...")
-        print(self.args)
-        subprocess.run(["node", self.tempdir + "/" + "script.js", str(self.args.balance * 100), str(self.args.hash).lower(), str(self.args.games), str(self.args.logs)])
+    # Reading the merged JavaScript code
+    with open(merged_script_path, 'r', encoding='utf-8') as merged_file:
+        merged_code = merged_file.read()
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("script",           help="Path to script file to be simulated.", type=misc.isFileExist)
-    parser.add_argument("-b", "--balance",  help="Amount of initial balance to start the simulation with.", type=int, default=10000)
-    parser.add_argument("-e", "--hash",     help="Ending hash to generate the games from.", type=str, default='rand')
-    parser.add_argument("-g", "--games",    help="Number of games to be played in the simulation", type=int, default=10000)
-    parser.add_argument("-l", "--logs",     help="Enable the script log output to the console.", action='store_true')
-    Simulator(parser.parse_args()).start()
-    exit(0)
+    # Executing the merged JavaScript code using dukpy
+    result = dukpy.evaljs(merged_code)
+
+    # Performing cleanup
+    self.cleaner.clean()
+
+    return result
+
+def __repr__(self):
+    """
+    Returns a string representation of the Simulator instance.
+    """
+    return f'Simulator(args={self.args}, balance={self.balance}, ' \
+           f'hash={self.hash}, games={self.games}, logs={self.logs})'
